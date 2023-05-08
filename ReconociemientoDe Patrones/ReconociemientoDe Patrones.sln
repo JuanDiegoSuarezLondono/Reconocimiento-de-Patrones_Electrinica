@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReconociemientoDe Patrones", "ReconociemientoDe Patrones.csproj", "{1490B4EA-DC73-24BE-2CF2-BECAE669B79D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReconociemientoDe Patrones.Editor", "ReconociemientoDe Patrones.Editor.csproj", "{7A72BDC6-F20E-15C8-8AE6-D7B7F421B316}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1490B4EA-DC73-24BE-2CF2-BECAE669B79D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1490B4EA-DC73-24BE-2CF2-BECAE669B79D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1490B4EA-DC73-24BE-2CF2-BECAE669B79D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1490B4EA-DC73-24BE-2CF2-BECAE669B79D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A72BDC6-F20E-15C8-8AE6-D7B7F421B316}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A72BDC6-F20E-15C8-8AE6-D7B7F421B316}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A72BDC6-F20E-15C8-8AE6-D7B7F421B316}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A72BDC6-F20E-15C8-8AE6-D7B7F421B316}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

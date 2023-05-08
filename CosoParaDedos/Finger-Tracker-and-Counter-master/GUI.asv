@@ -1,0 +1,256 @@
+function varargout = GUI(varargin)
+% GUI MATLAB code for GUI.fig
+%      GUI, by itself, creates a new GUI or raises the existing
+%      singleton*.
+%
+%      H = GUI returns the handle to a new GUI or the handle to
+%      the existing singleton*.
+%
+%      GUI('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in GUI.M with the given input arguments.
+%
+%      GUI('Property','Value',...) creates a new GUI or raises the
+%      existing singleton*.  Starting from the left, property value pairs are
+%      applied to the GUI before GUI_OpeningFcn gets called.  An
+%      unrecognized property name or invalid value makes property application
+%      stop.  All inputs are passed to GUI_OpeningFcn via varargin.
+%
+%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
+%      instance to run (singleton)".
+%
+% See also: GUIDE, GUIDATA, GUIHANDLES
+
+% Edit the above text to modify the response to help GUI
+
+% Last Modified by GUIDE v2.5 31-May-2018 18:49:45
+
+% Begin initialization code - DO NOT EDIT
+gui_Singleton = 1;
+gui_State = struct('gui_Name',       mfilename, ...
+                   'gui_Singleton',  gui_Singleton, ...
+                   'gui_OpeningFcn', @GUI_OpeningFcn, ...
+                   'gui_OutputFcn',  @GUI_OutputFcn, ...
+                   'gui_LayoutFcn',  [] , ...
+                   'gui_Callback',   []);
+if nargin && ischar(varargin{1})
+    gui_State.gui_Callback = str2func(varargin{1});
+end
+
+if nargout
+    [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
+else
+    gui_mainfcn(gui_State, varargin{:});
+end
+% End initialization code - DO NOT EDIT
+
+
+% --- Executes just before GUI is made visible.
+function GUI_OpeningFcn(hObject, eventdata, handles, varargin)
+% This function has no output args, see OutputFcn.
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% varargin   command line arguments to GUI (see VARARGIN)
+
+% Choose default command line output for GUI
+handles.output = hObject;
+
+% Update handles structure
+guidata(hObject, handles);
+
+% UIWAIT makes GUI wait for user response (see UIRESUME)
+% uiwait(handles.figure1);
+
+
+% --- Outputs from this function are returned to the command line.
+function varargout = GUI_OutputFcn(hObject, eventdata, handles) 
+% varargout  cell array for returning output args (see VARARGOUT);
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Get default command line output from handles structure
+varargout{1} = handles.output;
+
+
+% --- Executes on button press in pushbutton1.
+function pushbutton1_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%Dispositivo disponible para video
+vidDevice = imaq.VideoDevice('winvideo', 1, 'YUY2_640x480', ...
+'ROI', [1 1 640 480], ...
+'ReturnedColorSpace', 'rgb');
+
+%Crea un objeto tipo video para la entrada
+hVideoIn = vision.VideoPlayer;
+hVideoIn.Name = 'Original Video';
+hVideoIn.Position = [30 100 640 480];
+
+%Crea un objeto tipo video para la salida
+hVideoOut = vision.VideoPlayer;
+hVideoOut.Name = 'Fingers Tracking Video';
+hVideoOut.Position = [700 100 640 480];
+
+%Realiza un analisis blob (estadistica de los pixeles)
+hblob = vision.BlobAnalysis('AreaOutputPort', false, ... %Area de la seccion blanca
+                                'CentroidOutputPort', true, ... % Centro de la seccion
+                                'BoundingBoxOutputPort', true', ... % Caja limitante de salida
+                                'MinimumBlobArea', 800, ... % Area minima de la seccion
+                                'MaximumBlobArea', 1500, ... % Area maxima de la seccion
+                                'MaximumCount', 5); % Maximo de marcas
+%Inserta una forma                            
+hshapeinsRedBox = vision.ShapeInserter('BorderColor', 'Custom', ...
+                                        'CustomBorderColor', [1 1 0], ...
+                                        'Fill', true, ...
+                                        'FillColor', 'Custom', ...
+                                        'CustomFillColor', [1 0 1], ...
+                                        'Opacity', 0.4);
+%Inserta texto en la cuadricula negra                         
+htextins = vision.TextInserter('Text', '%4d', ... 
+                                    'Location',  [12 20], ...
+                                    'Color', [0 1 0], ...
+                                    'FontSize', 12);
+                                
+%Inserta texto de coordenadas   
+htextinsCent = vision.TextInserter('Text', '+      X:%4d, Y:%4d', ... 
+                                    'LocationSource', 'Input port', ...
+                                    'Color', [1 1 0], ...
+                                    'FontSize', 14);
+
+%%%%%%%%%%%%%%%%%%%%%%%%% Ciclo principal del parcial %%%%%%%%%%%%%%%%%%%%%%%%%
+nFrames = 0;
+while (nFrames <= 70) %Numero de frames antes de tomar la imagen
+    rgbData = step(vidDevice); %Toma un frame del video
+    rgbData = flipdim(rgbData,2); %Espejo horizontal a la imagen
+    data = rgbData;
+    
+    % Segmentacion de la piel
+    diff_im = imsubtract(data(:,:,1), rgb2gray(data)); %De la imagen en escala de grises se quita el rojo (queda en blanco lo rojo)
+    diff_im = medfilt2(diff_im, [3 3]); %Filtrado
+    diff_im = imadjust(diff_im); %Aumenta el contraste de la imagen acentuando los colores
+    level = graythresh(diff_im); %Utiliza el metodo de otsu para encontrar el valor umbral
+    bw = im2bw(diff_im,level); %Transforma la imagen a valoes binaros guiandose por el valor umbral
+    bwfill = medfilt2(imfill(bw,'holes'), [3 3]); %Llena los huecos y los filtros
+    
+    % Fingers Extraction
+    se1 = strel('disk',28);
+    kikis = imerode(bwfill,se1);
+    
+    se2 = strel('disk',40);
+    tebalin = imdilate(kikis,se2);    
+    
+    hasil = imsubtract(bwfill,tebalin);
+    se3 = strel('disk',5);
+    jari = imerode(hasil,se3);
+    jari = im2bw(jari);
+    
+    % Representation
+    [centroid, bbox] = step(hblob, jari); %Encuentra los centros y da las dimencioens de las cajas
+    centroid = uint16(centroid); % Transforma el flotate a entero de 16bits
+    data(1:40,1:250,:) = 0; % Etiqueta negra al lado superior
+    vidIn = step(hshapeinsRedBox, data, bbox); % Etiquetado en rojo si se encuentra el dedo
+    for object = 1:1:length(bbox(:,1)) % Graficar cada caja y su texto con cordenadas respectivas
+        centX = centroid(object,1); centY = centroid(object,2);
+        vidIn = step(htextinsCent, vidIn, [centX centY], [centX-6 centY-9]); 
+    end
+    
+    vidIn = step(htextins, vidIn, uint8(length(bbox(:,1)))); %% Cuenta numero de cajas
+
+    rgb_Out = vidIn;
+
+    step(hVideoOut, rgb_Out); %Enviado todo el video editado
+    nFrames = nFrames + 1;
+    
+end
+
+axes(handles.axes1)
+imshow(rgb_Out);
+randomeada = 20+randi(10);
+time = 0.5/randomeada;
+for suspenso = 1:1:randomeada
+    M = randi(3);
+    axes(handles.axes2)
+    switch M
+        case 1
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Computadora\Piedra.png');
+        case 2
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Computadora\Papel.png');
+        case 3
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Computadora\Tijeras.png');
+    end
+producto = time*suspenso
+pause(producto);
+
+end 
+
+if length(bbox(:,1)) == 0 || length(bbox(:,1)) == 1 
+
+    switch M
+        case 1
+            axes(handles.axes2)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Computadora\Piedra.png');
+            axes(handles.axes3)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Empate\Empate.png');
+        case 2
+            axes(handles.axes2)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Computadora\Papel.png');
+            axes(handles.axes3)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Pierde\JugadorPierdeRoca.png');
+        case 3
+            axes(handles.axes2)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Computadora\Tijeras.png');
+            axes(handles.axes3)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Gana\JugadorGanaPiedra.png');
+    end
+end
+
+if length(bbox(:,1)) >= 3
+
+    switch M
+        case 1
+            axes(handles.axes2)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Computadora\Piedra.png');
+            axes(handles.axes3)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Gana\JugadorGanaPapel.png');
+        case 2
+            axes(handles.axes2)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Computadora\Papel.png');
+            axes(handles.axes3)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Empate\Empate.png');
+        case 3
+            axes(handles.axes2)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Computadora\Tijeras.png');
+            axes(handles.axes3)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Pierde\JugadorPierdePapel.png');
+    end
+end
+
+if length(bbox(:,1)) == 2
+
+    switch M
+        case 1
+            axes(handles.axes2)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Computadora\Piedra.png');
+            axes(handles.axes3)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Pierde\JugadorPierdeTijeras.png');
+        case 2
+            axes(handles.axes2)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Computadora\Papel.png');
+            axes(handles.axes3)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Gana\JugadorGanaTijera.png');
+        case 3
+            axes(handles.axes2)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Computadora\Tijeras.png');
+            axes(handles.axes3)
+            imshow('C:\Users\suare\Desktop\CosoParaDedos\Finger-Tracker-and-Counter-master\Picks\Empate\Empate.png');
+    end
+end
+
+%Libera los recursos usados
+release(hVideoOut);
+release(hVideoIn);
+release(vidDevice);
+    

@@ -1,0 +1,69 @@
+[System]
+Name='pronostico'
+Type='mamdani'
+Version=2.0
+NumInputs=2
+NumOutputs=1
+NumRules=25
+AndMethod='min'
+OrMethod='max'
+ImpMethod='min'
+AggMethod='max'
+DefuzzMethod='centroid'
+
+[Input1]
+Name='input1'
+Range=[0 25]
+NumMFs=5
+MF1='frio':'trapmf',[-5.03 -1.22 3.40608465608465 5.92]
+MF2='medio_frio':'gaussmf',[1.3 7.70931216931217]
+MF3='normal':'gaussmf',[1.15152757314183 12.5]
+MF4='medio_caliente':'gaussmf',[1.14 17.5756613756614]
+MF5='caliente':'trapmf',[19.97 23.78 26.22 30.03]
+
+[Input2]
+Name='input2'
+Range=[0 100]
+NumMFs=5
+MF1='baja':'gaussmf',[7.30236997602132 0]
+MF2='medio_baja':'gaussmf',[4.9206739223036 30]
+MF3='normal':'gaussmf',[5.04 50.7698412698413]
+MF4='medio_alta':'gaussmf',[5.37 71.2634920634921]
+MF5='alta':'gaussmf',[5.50486352038532 100]
+
+[Output1]
+Name='output1'
+Range=[0 100]
+NumMFs=5
+MF1='sin_lluviaa':'trapmf',[-20.1 -4.88 19.7 20.1]
+MF2='llovizna':'trapmf',[19.7 20.1 35.8 39.2857142857143]
+MF3='lluvia':'gaussmf',[5.05548690647631 50]
+MF4='tormenta':'gaussmf',[5.16783105995357 75]
+MF5='diluvio':'gaussmf',[4.83079859952182 100]
+
+[Rules]
+1 1, 1 (1) : 1
+2 1, 1 (1) : 1
+3 1, 1 (1) : 1
+4 1, 3 (1) : 1
+5 1, 4 (1) : 1
+1 2, 3 (1) : 1
+2 2, 3 (1) : 1
+3 2, 2 (1) : 1
+4 2, 2 (1) : 1
+5 2, 1 (1) : 1
+1 3, 2 (1) : 1
+2 3, 2 (1) : 1
+3 3, 1 (1) : 1
+4 3, 1 (1) : 1
+5 3, 1 (1) : 1
+1 4, 2 (1) : 1
+2 4, 2 (1) : 1
+3 4, 2 (1) : 1
+4 4, 2 (1) : 1
+5 4, 1 (1) : 1
+1 5, 5 (1) : 1
+2 5, 5 (1) : 1
+3 5, 4 (1) : 1
+4 5, 3 (1) : 1
+5 5, 2 (1) : 1
